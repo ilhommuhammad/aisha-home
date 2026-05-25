@@ -157,7 +157,7 @@ tr:hover td{background:var(--color-background-secondary)}
             <div class="login-logo-sub">Fabrika boshqaruv tizimi</div>
           </div>
           <div class="login-field"><label>Login</label><input type="text" id="login-u" placeholder="loginni kiriting" onkeydown="if(event.key==='Enter')doLogin()"></div>
-          <div class="login-field"><label>Parol</label><input type="password" id="login-p" placeholder="parolni kiriting" onkeydown="if(event.key==='Enter')doLogin()"></div>
+          <div class="login-field"><label>Parol</label><div style="position:relative"><input type="password" id="login-p" placeholder="parolni kiriting" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:38px;width:100%"><button type="button" onclick="toggleParol()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#999;padding:0;font-size:16px" id="parol-toggle"><i class="ti ti-eye" id="parol-icon"></i></button></div></div>
           <button class="login-btn" onclick="doLogin()">Kirish →</button>
           <div class="login-err" id="login-err">❌ Login yoki parol noto'g'ri!</div>
           <div class="login-hint">
@@ -352,6 +352,12 @@ const USERS=[
   {login:'tmo',parol:'tmo123',rol:'xodim',bolim:'tmo',ism:'TMO xodimi'},
 ];
 let CU=null;
+function toggleParol(){
+  const inp=document.getElementById('login-p');
+  const icon=document.getElementById('parol-icon');
+  if(inp.type==='password'){inp.type='text';icon.className='ti ti-eye-off';}
+  else{inp.type='password';icon.className='ti ti-eye';}
+}
 function doLogin(){
   const u=document.getElementById('login-u').value.trim();
   const p=document.getElementById('login-p').value;
