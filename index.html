@@ -174,7 +174,8 @@ tr:hover td{background:var(--bg2)}
             yarim / yarim123 — Yarim tayyor<br>
             tikuv1 / tik1123 — Tikuv 1<br>
             tikuv2 / tik2123 — Tikuv 2<br>
-            tmo / tmo123 — TMO
+            tmo / tmo123 — TMO<br>
+            marketolog / market123 — Marketolog
           </div>
         </div>
       </div>
@@ -312,6 +313,27 @@ tr:hover td{background:var(--bg2)}
   </nav>
 </div>
 
+
+    <!-- ZAKAZ QOSHISH -->
+    <div class="page" id="page-zakaz-qoshish">
+      <div class="bolim-topbar">
+        <span style="font-size:15px;font-weight:500">📋 Yangi Заказ qo'shish</span>
+      </div>
+      <div style="background:var(--bg1);border:0.5px solid var(--border);border-radius:var(--r2);padding:20px;max-width:500px">
+        <div class="field" style="margin-bottom:14px">
+          <label style="display:block;font-size:13px;color:var(--text2);margin-bottom:6px">Заказ nomi *</label>
+          <input type="text" id="new-zakaz-name" placeholder="Masalan: 512 Yangi buyurtma" style="width:100%;font-size:14px" onkeydown="if(event.key==='Enter')saveNewZakaz()">
+        </div>
+        <div id="zakaz-add-ok" class="ok-msg" style="margin-bottom:12px"></div>
+        <div id="zakaz-add-err" class="err-msg" style="margin-bottom:12px"></div>
+        <button class="add-btn" style="margin-left:0;width:100%" onclick="saveNewZakaz()"><i class="ti ti-plus"></i> Zakazni saqlash</button>
+        <div style="margin-top:20px">
+          <p style="font-size:13px;font-weight:500;margin-bottom:10px">Mavjud заказlar:</p>
+          <div id="zakaz-list-market"></div>
+        </div>
+      </div>
+    </div>
+
 <!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
   <div class="modal">
@@ -343,6 +365,51 @@ tr:hover td{background:var(--bg2)}
 </div>
 
 <script>
+
+// ===== ZAKAZ QOSHISH (MARKETOLOG) =====
+function openZakazQoshish(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-zakaz-qoshish').classList.add('active');
+  loadZakazList();
+}
+
+async function loadZakazList(){
+  const {data}=await sb.from('orders').select('name').order('name');
+  const el=document.getElementById('zakaz-list-market');
+  if(!data||data.length===0){el.innerHTML='<p style="font-size:12px;color:var(--text3)">Hali zakazlar yo'q</p>';return;}
+  el.innerHTML=data.map(o=>`<div style="padding:7px 10px;background:var(--bg2);border-radius:var(--r);margin-bottom:6px;font-size:13px;display:flex;align-items:center;justify-content:space-between">
+    <span>${o.name}</span>
+    <button onclick="deleteZakaz('${o.name.replace(/'/g,"\'")}')" style="background:none;border:none;cursor:pointer;color:#D85A30;font-size:12px"><i class="ti ti-trash"></i></button>
+  </div>`).join('');
+}
+
+async function saveNewZakaz(){
+  const name=document.getElementById('new-zakaz-name').value.trim();
+  const ok=document.getElementById('zakaz-add-ok');
+  const err=document.getElementById('zakaz-add-err');
+  ok.classList.remove('show');err.classList.remove('show');
+  if(!name){err.textContent='❌ Заказ nomini kiriting!';err.classList.add('show');return;}
+  const {error}=await sb.from('orders').insert({name});
+  if(error){
+    if(error.code==='23505'){err.textContent='❌ Bu nom allaqachon mavjud!';err.classList.add('show');}
+    else{err.textContent='❌ Xato: '+error.message;err.classList.add('show');}
+    return;
+  }
+  ok.textContent='✅ "'+name+'" qo'shildi!';
+  ok.classList.add('show');
+  document.getElementById('new-zakaz-name').value='';
+  loadZakazList();
+  loadOrders();
+  setTimeout(()=>ok.classList.remove('show'),3000);
+}
+
+async function deleteZakaz(name){
+  if(!confirm('"'+name+'" zakazini o'chirishni tasdiqlaysizmi?'))return;
+  await sb.from('orders').delete().eq('name',name);
+  loadZakazList();
+  loadOrders();
+}
+
 // ===== SUPABASE =====
 const SUPABASE_URL = 'https://mqdotpfshtzngiqigaiw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_TKsLZ8TlVSAZGdILg5B2YQ_5RARnjIs';
@@ -360,6 +427,7 @@ const USERS=[
   {login:'tikuv1',parol:'tik1123',rol:'xodim',bolim:'tikuv1',ism:'Tikuv 1 xodimi'},
   {login:'tikuv2',parol:'tik2123',rol:'xodim',bolim:'tikuv2',ism:'Tikuv 2 xodimi'},
   {login:'tmo',parol:'tmo123',rol:'xodim',bolim:'tmo',ism:'TMO xodimi'},
+  {login:'marketolog',parol:'market123',rol:'marketolog',bolim:'zakaz',ism:'Marketolog'},
 ];
 
 const BOLIM_INFO={
@@ -414,7 +482,9 @@ function afterLogin(){
   const M=['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'];
   document.getElementById('kecha-sana').textContent=y.getDate()+' '+M[y.getMonth()]+' '+y.getFullYear()+' y. hisoboti';
   loadOrders();
-  if(CU.rol==='xodim'){
+  if(CU.rol==='marketolog'){
+    openZakazQoshish();
+  } else if(CU.rol==='xodim'){
     if(CU.bolim==='tmo')openBolim('tmo');
     else openBolim(CU.bolim);
   } else {
@@ -434,6 +504,7 @@ function doLogout(){
 }
 
 function canEdit(bid){
+  if(CU.rol==='marketolog')return false;
   if(!CU)return false;
   if(CU.rol==='admin')return true;
   if(CU.rol==='rahbariyat')return false;
