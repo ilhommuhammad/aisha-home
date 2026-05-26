@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aisha Home — Fabrika tizimi</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1D9E75;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --bg:#f0f0f0;--bg1:#fff;--bg2:#f5f5f5;
+  --text:#111;--text2:#555;--text3:#999;
+  --border:#e0e0e0;--border2:#ccc;
+  --r:6px;--r2:10px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#141414;--bg1:#1e1e1e;--bg2:#2a2a2a;
+  --text:#f0f0f0;--text2:#aaa;--text3:#666;
+  --border:#333;--border2:#444;
+}}
+body{font-family:var(--font);background:var(--bg);min-height:100vh;color:var(--text)}
+input,select,button{font-family:var(--font);color:var(--text)}
+input,select{padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg2)}
+input:focus,select:focus{outline:none;border-color:var(--green)}
+.topbar{background:var(--bg1);border-bottom:0.5px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.nav{display:flex;gap:4px}
+.nav button{background:none;border:none;cursor:pointer;padding:6px 12px;border-radius:var(--r);font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.nav button.active{background:var(--bg2);color:var(--text);font-weight:500}
+.logout-btn{background:none;border:0.5px solid var(--border2);cursor:pointer;padding:5px 10px;border-radius:var(--r);font-size:12px;color:var(--text2)}
+.content{padding:16px;max-width:1200px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.sec-title{font-size:15px;font-weight:500;margin-bottom:12px}
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 52px)}
+.login-box{background:var(--bg1);border:0.5px solid var(--border);border-radius:var(--r2);padding:32px;width:100%;max-width:360px}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo i{font-size:40px;color:var(--green)}
+.login-logo-name{font-size:22px;font-weight:600;margin-top:6px}
+.login-logo-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.lf{margin-bottom:14px}
+.lf label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px}
+.lf input{width:100%;font-size:14px}
+.lf-pass{position:relative}
+.lf-pass input{padding-right:38px}
+.lf-pass button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:0}
+.login-btn{width:100%;background:var(--green);color:#fff;border:none;cursor:pointer;padding:10px;border-radius:var(--r);font-size:14px;font-weight:500}
+.login-err{color:#D85A30;font-size:12px;margin-top:8px;display:none}
+.login-err.show{display:block}
+.login-hint{margin-top:20px;padding:12px;background:var(--bg2);border-radius:var(--r);font-size:11px;color:var(--text3);line-height:1.9}
+.login-hint b{color:var(--text2)}
+/* SXEMA */
+.sxema-layout{display:grid;grid-template-columns:1fr 200px;gap:16px;align-items:start}
+.schema-wrap{background:var(--bg1);border-radius:var(--r2);border:0.5px solid var(--border);padding:12px;overflow-x:auto}
+.right-panel{display:flex;flex-direction:column;gap:10px}
+.right-card{background:var(--bg1);border:0.5px solid var(--border);border-radius:var(--r2);padding:14px;cursor:pointer}
+.right-card:hover{border-color:var(--border2)}
+.right-card-icon{font-size:22px;margin-bottom:6px}
+.right-card-name{font-size:13px;font-weight:500;margin-bottom:2px}
+.right-card-desc{font-size:11px;color:var(--text3)}
+/* DASHBOARD */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.stat-card{background:var(--bg2);border-radius:var(--r);padding:12px 14px}
+.stat-label{font-size:12px;color:var(--text2);margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:500}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.bolimlar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.bolim-card{background:var(--bg1);border:0.5px solid var(--border);border-radius:var(--r2);padding:12px 14px;cursor:pointer}
+.bolim-card:hover{border-color:var(--border2)}
+.bolim-icon{font-size:20px;margin-bottom:6px;color:var(--text2)}
+.bolim-name{font-size:13px;font-weight:500;margin-bottom:2px}
+.bolim-val{font-size:12px;color:var(--text2)}
+.bolim-bar{height:3px;border-radius:2px;background:var(--border);margin-top:8px}
+.bolim-fill{height:3px;border-radius:2px}
+/* BOLIM */
+.mob-nav{display:none;background:var(--bg1);border-top:0.5px solid var(--border);padding:6px 0;position:fixed;bottom:0;left:0;right:0;z-index:100}
+.mob-nav button{flex:1;background:none;border:none;cursor:pointer;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--text2)}
+.mob-nav button.active{color:var(--green)}
+.bolim-topbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.back-btn{background:none;border:0.5px solid var(--border);cursor:pointer;color:var(--text2);font-size:13px;display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--r)}
+.add-btn{background:var(--green);color:#fff;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);font-weight:500;margin-left:auto}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.toolbar input{flex:1;min-width:160px;font-size:13px}
+.b-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px}
+.scard{background:var(--bg1);border:0.5px solid var(--border);border-radius:var(--r);padding:8px 12px}
+.scard-label{font-size:11px;color:var(--text2);margin-bottom:2px}
+.scard-val{font-size:18px;font-weight:500}
+.scard-unit{font-size:11px;color:var(--text3)}
+.table-wrap{overflow-x:auto;background:var(--bg1);border:0.5px solid var(--border);border-radius:var(--r2)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:center;font-size:11px;font-weight:500;color:var(--text2);padding:7px 8px;border-bottom:0.5px solid var(--border);background:var(--bg2);white-space:nowrap;border-right:0.5px solid var(--border)}
+th:last-child{border-right:none}
+td{padding:7px 8px;border-bottom:0.5px solid var(--border);text-align:center;border-right:0.5px solid var(--border)}
+td:nth-child(2){text-align:left}
+td:last-child{border-right:none}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg2)}
+.btn-list{background:none;border:0.5px solid var(--border2);border-radius:var(--r);padding:3px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.pager{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:0.5px solid var(--border);font-size:12px;color:var(--text2)}
+.pager button{background:none;border:0.5px solid var(--border2);border-radius:var(--r);padding:4px 10px;font-size:12px;cursor:pointer}
+.pager button:disabled{opacity:0.4;cursor:default}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg1);border-radius:var(--r2);width:92%;max-width:460px;overflow:hidden}
+.modal-head{padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-head-title{font-size:14px;font-weight:500}
+.modal-close{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text2);line-height:1}
+.modal-body{padding:16px;display:flex;flex-direction:column;gap:12px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
+.field input,.field select{width:100%;font-size:13px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-foot{padding:12px 16px;border-top:0.5px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.btn-primary{background:var(--green);color:#fff;border:none;cursor:pointer;padding:8px 20px;border-radius:var(--r);font-size:13px;font-weight:500}
+.btn-cancel{background:none;border:0.5px solid var(--border2);cursor:pointer;padding:8px 16px;border-radius:var(--r);font-size:13px}
+.ok-msg{background:#d4edda;color:#155724;padding:8px 12px;border-radius:var(--r);font-size:13px;display:none}
+.err-msg{background:#f8d7da;color:#721c24;padding:8px 12px;border-radius:var(--r);font-size:13px;display:none}
+.ok-msg.show{display:block}
+.err-msg{background:#f8d7da;color:#721c24;padding:8px 12px;border-radius:var(--r);font-size:13px;display:none}
+.err-msg.show{display:block}
+.loading{text-align:center;padding:20px;color:var(--text3);font-size:13px}
+.rol-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+.rol-admin{background:rgba(216,90,48,0.12);color:#D85A30}
+.rol-rahbariyat{background:rgba(186,117,23,0.12);color:#BA7517}
+.rol-xodim{background:rgba(29,158,117,0.12);color:#1D9E75}
+@media(max-width:600px){
+  .nav{display:none}.mob-nav{display:flex}
+  .content{padding:10px;padding-bottom:70px}
+  .topbar{height:46px}
+  .sxema-layout{grid-template-columns:1fr}
+  .right-panel{flex-direction:row;flex-wrap:wrap}
+  .right-card{flex:1;min-width:120px}
+  .toolbar{flex-direction:column}.toolbar input{width:100%}
+  .field-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo"><i class="ti ti-home-2"></i> Aisha Home</div>
+    <div id="topbar-right"></div>
+  </div>
+  <div class="content">
+
+    <!-- LOGIN -->
+    <div class="page active" id="page-login">
+      <div class="login-wrap">
+        <div class="login-box">
+          <div class="login-logo">
+            <i class="ti ti-home-2"></i>
+            <div class="login-logo-name">Aisha Home</div>
+            <div class="login-logo-sub">Fabrika boshqaruv tizimi</div>
+          </div>
+          <div class="lf"><label>Login</label><input type="text" id="login-u" placeholder="loginni kiriting" onkeydown="if(event.key==='Enter')doLogin()"></div>
+          <div class="lf"><label>Parol</label>
+            <div class="lf-pass">
+              <input type="password" id="login-p" placeholder="parolni kiriting" onkeydown="if(event.key==='Enter')doLogin()">
+              <button type="button" onclick="toggleParol()"><i class="ti ti-eye" id="parol-icon"></i></button>
+            </div>
+          </div>
+          <button class="login-btn" onclick="doLogin()">Kirish →</button>
+          <div class="login-err" id="login-err">❌ Login yoki parol noto'g'ri!</div>
+          <div class="login-hint">
+            <b>Loginlar:</b><br>
+            admin / admin123 — Admin<br>
+            rahbar / rahbar123 — Rahbariyat<br>
+            toquv / toquv123 — To'quv<br>
+            xomombor / xom123 — Xom ombor<br>
+            partiya / part123 — Partiya<br>
+            boyash / boy123 — Bo'yash<br>
+            yarim / yarim123 — Yarim tayyor<br>
+            tikuv1 / tik1123 — Tikuv 1<br>
+            tikuv2 / tik2123 — Tikuv 2<br>
+            tmo / tmo123 — TMO<br>
+            marketolog / market123 — Marketolog
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page" id="page-dashboard">
+      <p class="sec-title" id="kecha-sana"></p>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Ishlab chiqarildi</div><div class="stat-val" id="dash-sht">—</div><div class="stat-sub">dona sochiq</div></div>
+        <div class="stat-card"><div class="stat-label">Jami yozuvlar</div><div class="stat-val" id="dash-total">—</div><div class="stat-sub">barcha bo'limlar</div></div>
+        <div class="stat-card"><div class="stat-label">Buyurtmalar</div><div class="stat-val" id="dash-orders">—</div><div class="stat-sub">faol</div></div>
+      </div>
+      <p class="sec-title">Bo'limlar holati</p>
+      <div class="bolimlar">
+        <div class="bolim-card" onclick="openBolim('toquv')"><div class="bolim-icon"><i class="ti ti-grid-pattern"></i></div><div class="bolim-name">To'quv bo'limi</div><div class="bolim-val" id="dc-toquv">—</div><div class="bolim-bar"><div class="bolim-fill" id="db-toquv" style="background:#185FA5"></div></div></div>
+        <div class="bolim-card" onclick="openBolim('xomombor')"><div class="bolim-icon"><i class="ti ti-stack-2"></i></div><div class="bolim-name">Xom ombor</div><div class="bolim-val" id="dc-xomombor">—</div><div class="bolim-bar"><div class="bolim-fill" id="db-xomombor" style="background:#1D9E75"></div></div></div>
+        <div class="bolim-card" onclick="openBolim('partiya')"><div class="bolim-icon"><i class="ti ti-clipboard-list"></i></div><div class="bolim-name">Partiya</div><div class="bolim-val" id="dc-partiya">—</div><div class="bolim-bar"><div class="bolim-fill" id="db-partiya" style="background:#BA7517"></div></div></div>
+        <div class="bolim-card" onclick="openBolim('boyash')"><div class="bolim-icon"><i class="ti ti-palette"></i></div><div class="bolim-name">Bo'yash bo'limi</div><div class="bolim-val" id="dc-boyash">—</div><div class="bolim-bar"><div class="bolim-fill" id="db-boyash" style="background:#D85A30"></div></div></div>
+        <div class="bolim-card" onclick="openBolim('yarimtayyor')"><div class="bolim-icon"><i class="ti ti-box"></i></div><div class="bolim-name">Yarim tayyor ombor</div><div class="bolim-val" id="dc-yarimtayyor">—</div><div class="bolim-bar"><div class="bolim-fill" id="db-yarimtayyor" style="background:#3B6D11"></div></div></div>
+        <div class="bolim-card" onclick="openBolim('tikuv1')"><div class="bolim-icon"><i class="ti ti-needle-thread"></i></div><div class="bolim-name">Tikuv 1</div><div class="bolim-val" id="dc-tikuv1">—</div><div class="bolim-bar"><div class="bolim-fill" id="db-tikuv1" style="background:#993556"></div></div></div>
+        <div class="bolim-card" onclick="openBolim('tikuv2')"><div class="bolim-icon"><i class="ti ti-needle-thread"></i></div><div class="bolim-name">Tikuv 2</div><div class="bolim-val" id="dc-tikuv2">—</div><div class="bolim-bar"><div class="bolim-fill" id="db-tikuv2" style="background:#993556"></div></div></div>
+        <div class="bolim-card" onclick="openBolim('tmo')"><div class="bolim-icon"><i class="ti ti-packages" style="color:#1D9E75"></i></div><div class="bolim-name" style="color:#1D9E75">TMO</div><div class="bolim-val" id="dc-tmo">—</div><div class="bolim-bar"><div class="bolim-fill" id="db-tmo" style="background:#0F6E56"></div></div></div>
+      </div>
+    </div>
+
+    <!-- SXEMA -->
+    <div class="page" id="page-sxema">
+      <p class="sec-title">Ishlab chiqarish zanjiri</p>
+      <div class="sxema-layout">
+        <div class="schema-wrap">
+          <svg width="100%" viewBox="0 0 480 530">
+            <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+            <g style="cursor:pointer" onclick="openBolim('toquv')"><rect x="120" y="16" width="240" height="50" rx="8" fill="#185FA5" fill-opacity="0.1" stroke="#378ADD" stroke-width="1.5"/><text x="240" y="37" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#378ADD">To'quv bo'limi</text><text x="240" y="54" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">Ipdan sochiq to'qish</text></g>
+            <line x1="240" y1="66" x2="240" y2="94" stroke="#378ADD" stroke-width="1.5" marker-end="url(#arr)"/>
+            <g style="cursor:pointer" onclick="openBolim('xomombor')"><rect x="120" y="94" width="240" height="50" rx="8" fill="#085041" fill-opacity="0.1" stroke="#1D9E75" stroke-width="1.5"/><text x="240" y="115" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1D9E75">Xom ombor</text><text x="240" y="132" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">To'qilgan sochiqlar</text></g>
+            <line x1="240" y1="144" x2="240" y2="172" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#arr)"/>
+            <g style="cursor:pointer" onclick="openBolim('partiya')"><rect x="120" y="172" width="240" height="50" rx="8" fill="#BA7517" fill-opacity="0.1" stroke="#BA7517" stroke-width="1.5"/><text x="240" y="193" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#BA7517">Partiya</text><text x="240" y="210" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">Bo'yashga tayyorlash</text></g>
+            <line x1="240" y1="222" x2="240" y2="250" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arr)"/>
+            <g style="cursor:pointer" onclick="openBolim('boyash')"><rect x="120" y="250" width="240" height="50" rx="8" fill="#D85A30" fill-opacity="0.1" stroke="#D85A30" stroke-width="1.5"/><text x="240" y="271" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#D85A30">Bo'yash bo'limi</text><text x="240" y="288" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">Sochiqqa rang berish</text></g>
+            <line x1="240" y1="300" x2="240" y2="328" stroke="#D85A30" stroke-width="1.5" marker-end="url(#arr)"/>
+            <g style="cursor:pointer" onclick="openBolim('yarimtayyor')"><rect x="120" y="328" width="240" height="50" rx="8" fill="#3B6D11" fill-opacity="0.1" stroke="#639922" stroke-width="1.5"/><text x="240" y="349" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#639922">Yarim tayyor ombor</text><text x="240" y="366" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">Bo'yalgan sochiqlar</text></g>
+            <path d="M200 378 L100 406" fill="none" stroke="#639922" stroke-width="1.5" marker-end="url(#arr)"/>
+            <path d="M280 378 L380 406" fill="none" stroke="#639922" stroke-width="1.5" marker-end="url(#arr)"/>
+            <g style="cursor:pointer" onclick="openBolim('tikuv1')"><rect x="20" y="406" width="175" height="50" rx="8" fill="#993556" fill-opacity="0.1" stroke="#D4537E" stroke-width="1.5"/><text x="108" y="427" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#D4537E">Tikuv 1</text><text x="108" y="444" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">Tikish, bezatish</text></g>
+            <g style="cursor:pointer" onclick="openBolim('tikuv2')"><rect x="285" y="406" width="175" height="50" rx="8" fill="#993556" fill-opacity="0.1" stroke="#D4537E" stroke-width="1.5"/><text x="372" y="427" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#D4537E">Tikuv 2</text><text x="372" y="444" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">Tikish, bezatish</text></g>
+            <path d="M108 456 L108 493 L188 493" fill="none" stroke="#D4537E" stroke-width="1.5" marker-end="url(#arr)"/>
+            <path d="M372 456 L372 493 L292 493" fill="none" stroke="#D4537E" stroke-width="1.5" marker-end="url(#arr)"/>
+            <g style="cursor:pointer" onclick="openBolim('tmo')"><rect x="120" y="468" width="240" height="50" rx="8" fill="#085041" fill-opacity="0.12" stroke="#1D9E75" stroke-width="1.5"/><text x="240" y="489" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1D9E75">📦 TMO</text><text x="240" y="506" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">Tayyor mahsulot ombori</text></g>
+          </svg>
+          <p style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center">Bo'limni bosing — jadval ochiladi</p>
+        </div>
+        <div class="right-panel">
+          <div class="right-card" onclick="openBolim('zakaz')"><div class="right-card-icon">📋</div><div class="right-card-name">Заказ</div><div class="right-card-desc">Buyurtmalar holati</div></div>
+          <div class="right-card"><div class="right-card-icon">👥</div><div class="right-card-name">HR</div><div class="right-card-desc">Kadrlar boshqaruvi</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZAKAZ -->
+    <div class="page" id="page-zakaz">
+      <div class="bolim-topbar">
+        <button class="back-btn" onclick="closeBolim()"><i class="ti ti-arrow-left"></i> Orqaga</button>
+        <span style="font-size:15px;font-weight:500">📋 Заказ — Buyurtmalar holati</span>
+      </div>
+      <div class="toolbar"><input type="text" id="zakaz-search" placeholder="Qidiruv..." oninput="zakazFilter()"></div>
+      <div class="table-wrap" id="zakaz-loading"><div class="loading"><i class="ti ti-loader"></i> Yuklanmoqda...</div></div>
+      <div class="pager"><span id="zakaz-info"></span><div style="display:flex;gap:6px"><button id="z-prev" onclick="zakazPage(-1)">&#8592;</button><button id="z-next" onclick="zakazPage(1)">&#8594;</button></div></div>
+    </div>
+
+    <!-- BOLIM -->
+    <div class="page" id="page-bolim">
+      <div class="bolim-topbar">
+        <button class="back-btn" onclick="closeBolim()"><i class="ti ti-arrow-left"></i> Orqaga</button>
+        <span id="bolim-title" style="font-size:15px;font-weight:500"></span>
+        <button class="add-btn" id="add-btn-bolim" onclick="openModal()" style="display:none"><i class="ti ti-plus"></i> Qo'shish</button>
+      </div>
+      <div class="toolbar"><input type="text" id="bolim-search" placeholder="Qidiruv..." oninput="bolimFilter()"></div>
+      <div class="b-stats">
+        <div class="scard"><div class="scard-label">Jami Бр</div><div class="scard-val" id="b-br">—</div><div class="scard-unit">kg</div></div>
+        <div class="scard"><div class="scard-label">Jami НТ</div><div class="scard-val" id="b-nt">—</div><div class="scard-unit">kg</div></div>
+        <div class="scard"><div class="scard-label">Jami Шт</div><div class="scard-val" id="b-sht">—</div><div class="scard-unit">dona</div></div>
+        <div class="scard"><div class="scard-label" id="b-last-label">—</div><div class="scard-val" id="b-last">—</div><div class="scard-unit">ta</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:36px;text-align:left">№</th>
+            <th style="text-align:left">Заказ</th>
+            <th style="width:58px">Бр</th><th style="width:58px">НТ</th>
+            <th style="width:52px">Шт</th><th style="width:58px">Число</th>
+            <th style="width:82px" id="last-col-header">—</th>
+            <th style="width:60px">Amal</th>
+          </tr></thead>
+          <tbody id="bolim-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pager"><span id="bolim-info"></span><div style="display:flex;gap:6px"><button id="b-prev" onclick="bolimChangePage(-1)">&#8592;</button><button id="b-next" onclick="bolimChangePage(1)">&#8594;</button></div></div>
+    </div>
+
+    <!-- TMO -->
+    <div class="page" id="page-tmo">
+      <div class="bolim-topbar">
+        <button class="back-btn" onclick="closeBolim()"><i class="ti ti-arrow-left"></i> Orqaga</button>
+        <span style="font-size:15px;font-weight:500">📦 TMO</span>
+        <button class="add-btn" id="add-btn-tmo" onclick="openModal()" style="display:none"><i class="ti ti-plus"></i> Qo'shish</button>
+      </div>
+      <div class="toolbar"><input type="text" id="tmo-search" placeholder="Qidiruv..." oninput="tmoFilter()"></div>
+      <div class="b-stats">
+        <div class="scard"><div class="scard-label">Jami Бр</div><div class="scard-val" id="ts-br">—</div><div class="scard-unit">kg</div></div>
+        <div class="scard"><div class="scard-label">Jami НТ</div><div class="scard-val" id="ts-nt">—</div><div class="scard-unit">kg</div></div>
+        <div class="scard"><div class="scard-label">Jami Шт</div><div class="scard-val" id="ts-sht">—</div><div class="scard-unit">dona</div></div>
+        <div class="scard"><div class="scard-label">Jami Коп сони</div><div class="scard-val" id="ts-kop">—</div><div class="scard-unit">ta</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:36px;text-align:left">№</th>
+            <th style="text-align:left">Заказ</th>
+            <th style="width:58px">Бр</th><th style="width:58px">НТ</th>
+            <th style="width:52px">Шт</th><th style="width:58px">Число</th>
+            <th style="width:68px">Коп сони</th>
+            <th style="width:60px">Amal</th>
+          </tr></thead>
+          <tbody id="tmo-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pager"><span id="tmo-info"></span><div style="display:flex;gap:6px"><button id="t-prev" onclick="tmoChangePage(-1)">&#8592;</button><button id="t-next" onclick="tmoChangePage(1)">&#8594;</button></div></div>
+    </div>
+
+  </div>
+  <nav class="mob-nav" id="mob-nav" style="display:none">
+    <button class="active" id="mob-dash" onclick="showPage('dashboard',this)"><i class="ti ti-chart-bar"></i>Kunlik</button>
+    <button id="mob-sxema" onclick="showPage('sxema',this)"><i class="ti ti-sitemap"></i>Sxema</button>
+  </nav>
+</div>
+
+
+    <!-- ZAKAZ QOSHISH -->
+    <div class="page" id="page-zakaz-qoshish">
+      <div class="bolim-topbar">
+        <span style="font-size:15px;font-weight:500">📋 Yangi Заказ qo'shish</span>
+      </div>
+      <div style="background:var(--bg1);border:0.5px solid var(--border);border-radius:var(--r2);padding:20px;max-width:500px;margin-top:8px">
+        <div class="field-row" style="margin-bottom:12px">
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Заказ nomi *</label>
+            <input type="text" id="new-zakaz-name" placeholder="Masalan: 512 Катар" style="width:100%;font-size:13px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Масъул</label>
+            <input type="text" id="new-zakaz-masul" placeholder="Ism familiya" style="width:100%;font-size:13px">
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:12px">
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Килоси (kg)</label>
+            <input type="number" id="new-zakaz-kilo" placeholder="0" min="0" step="0.1" style="width:100%;font-size:13px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Штуги (dona)</label>
+            <input type="number" id="new-zakaz-sht" placeholder="0" min="0" style="width:100%;font-size:13px">
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:12px">
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Тушган сана</label>
+            <input type="date" id="new-zakaz-sana" style="width:100%;font-size:13px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Срок (tugash sanasi)</label>
+            <input type="date" id="new-zakaz-srok" style="width:100%;font-size:13px">
+          </div>
+        </div>
+        <div id="zakaz-add-ok" class="ok-msg" style="margin-bottom:12px"></div>
+        <div id="zakaz-add-err" class="err-msg" style="margin-bottom:12px"></div>
+        <button class="add-btn" style="margin-left:0;width:100%" onclick="saveNewZakaz()"><i class="ti ti-plus"></i> Zakazni saqlash</button>
+        <div style="margin-top:24px">
+          <p style="font-size:13px;font-weight:500;margin-bottom:10px;color:var(--text)">Mavjud заказlar:</p>
+          <div id="zakaz-list-market"></div>
+        </div>
+      </div>
+    </div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-head-title" id="modal-title">Yangi qator</span>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="ok-msg" class="ok-msg">✅ Muvaffaqiyatli saqlandi!</div>
+      <div id="err-msg" class="err-msg"></div>
+      <div class="field"><label>Заказ *</label>
+        <select id="m-zakaz"><option value="">— tanlang —</option></select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Бр (kg)</label><input type="number" id="m-br" placeholder="0" min="0" step="0.1"></div>
+        <div class="field"><label>НТ (kg) *</label><input type="number" id="m-nt" placeholder="0.0" min="0" step="0.1"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Шт *</label><input type="number" id="m-sht" placeholder="0" min="0"></div>
+        <div class="field"><label>Число *</label><input type="number" id="m-chislo" placeholder="0" min="0"></div>
+      </div>
+      <div class="field"><label id="m-last-label">Рулон сони *</label><input type="number" id="m-last" placeholder="0" min="0"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">Bekor qilish</button>
+      <button class="btn-primary" id="save-btn" onclick="saveRecord()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// ===== MARKETOLOG: ZAKAZ QOSHISH =====
+async function loadZakazList(){
+  const el=document.getElementById('zakaz-list-market');
+  if(!el)return;
+  const {data}=await sb.from('orders').select('*').order('tushgan_sana',{ascending:false});
+  if(!data||data.length===0){
+    el.innerHTML='<p style="font-size:12px;color:var(--text3)">Hali zakazlar yo\'q</p>';
+    return;
+  }
+  el.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr>
+      <th style="text-align:left">Заказ номи</th>
+      <th>Килоси</th>
+      <th>Штуги</th>
+      <th>Масъул</th>
+      <th>Тушган сана</th>
+      <th>Срок</th>
+      <th>Amal</th>
+    </tr></thead>
+    <tbody>${data.map(o=>`<tr>
+      <td style="text-align:left"><b>${o.name}</b></td>
+      <td>${o.kilosi||'—'}</td>
+      <td>${o.shtugi||'—'}</td>
+      <td>${o.masul||'—'}</td>
+      <td>${o.tushgan_sana||'—'}</td>
+      <td style="color:${o.srok&&new Date(o.srok)<new Date()?'#D85A30':'inherit'}">${o.srok||'—'}</td>
+      <td><button onclick="deleteZakazM(this,'${o.name.replace(/'/g,"\\'")}')" style="background:none;border:none;cursor:pointer;color:#D85A30;font-size:14px;padding:2px 6px"><i class="ti ti-trash"></i></button></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+async function saveNewZakaz(){
+  const name=document.getElementById('new-zakaz-name').value.trim();
+  const masul=document.getElementById('new-zakaz-masul').value.trim();
+  const kilosi=parseFloat(document.getElementById('new-zakaz-kilo').value)||0;
+  const shtugi=parseInt(document.getElementById('new-zakaz-sht').value)||0;
+  const tushgan_sana=document.getElementById('new-zakaz-sana').value||null;
+  const srok=document.getElementById('new-zakaz-srok').value||null;
+  const ok=document.getElementById('zakaz-add-ok');
+  const err=document.getElementById('zakaz-add-err');
+  ok.style.display='none'; err.style.display='none';
+  if(!name){
+    err.textContent='❌ Заказ nomini kiriting!';
+    err.style.display='block';
+    return;
+  }
+  const btn=document.querySelector('#page-zakaz-qoshish .add-btn');
+  btn.disabled=true; btn.textContent='Saqlanmoqda...';
+  const {error}=await sb.from('orders').insert({name,masul,kilosi,shtugi,tushgan_sana,srok});
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-plus"></i> Zakazni saqlash';
+  if(error){
+    if(error.code==='23505'){err.textContent='❌ Bu nom allaqachon mavjud!';}
+    else{err.textContent='❌ Xato: '+error.message;}
+    err.style.display='block';
+    return;
+  }
+  ok.textContent='✅ "'+name+'" muvaffaqiyatli qo\'shildi!';
+  ok.style.display='block';
+  ['new-zakaz-name','new-zakaz-masul','new-zakaz-kilo','new-zakaz-sht','new-zakaz-sana','new-zakaz-srok'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  loadZakazList();
+  loadOrders();
+  setTimeout(()=>{ok.style.display='none';},3000);
+}
+
+async function deleteZakazM(btn,name){
+  if(!confirm('"'+name+'" zakazini o\'chirishni tasdiqlaysizmi?'))return;
+  btn.disabled=true;
+  await sb.from('orders').delete().eq('name',name);
+  loadZakazList();
+  loadOrders();
+}
+
+// ===== SUPABASE =====
+const SUPABASE_URL = 'https://mqdotpfshtzngiqigaiw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_TKsLZ8TlVSAZGdILg5B2YQ_5RARnjIs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ===== FOYDALANUVCHILAR =====
+const USERS=[
+  {login:'admin',parol:'admin123',rol:'admin',bolim:'*',ism:'Administrator'},
+  {login:'rahbar',parol:'rahbar123',rol:'rahbariyat',bolim:'*',ism:'Rahbariyat'},
+  {login:'toquv',parol:'toquv123',rol:'xodim',bolim:'toquv',ism:"To'quv xodimi"},
+  {login:'xomombor',parol:'xom123',rol:'xodim',bolim:'xomombor',ism:'Xom ombor xodimi'},
+  {login:'partiya',parol:'part123',rol:'xodim',bolim:'partiya',ism:'Partiya xodimi'},
+  {login:'boyash',parol:'boy123',rol:'xodim',bolim:'boyash',ism:"Bo'yash xodimi"},
+  {login:'yarim',parol:'yarim123',rol:'xodim',bolim:'yarimtayyor',ism:'Yarim tayyor xodimi'},
+  {login:'tikuv1',parol:'tik1123',rol:'xodim',bolim:'tikuv1',ism:'Tikuv 1 xodimi'},
+  {login:'tikuv2',parol:'tik2123',rol:'xodim',bolim:'tikuv2',ism:'Tikuv 2 xodimi'},
+  {login:'tmo',parol:'tmo123',rol:'xodim',bolim:'tmo',ism:'TMO xodimi'},
+  {login:'marketolog',parol:'market123',rol:'marketolog',bolim:'zakaz',ism:'Marketolog'},
+];
+
+const BOLIM_INFO={
+  toquv:{title:"🏭 To'quv bo'limi",lastLabel:'Рулон сони'},
+  xomombor:{title:"📦 Xom ombor",lastLabel:'Рулон сони'},
+  partiya:{title:"📋 Partiya",lastLabel:'Рулон сони'},
+  boyash:{title:"🎨 Bo'yash bo'limi",lastLabel:'Рулон сони'},
+  yarimtayyor:{title:"🏪 Yarim tayyor ombor",lastLabel:'Рулон сони'},
+  tikuv1:{title:"✂️ Tikuv 1",lastLabel:'Коп сони'},
+  tikuv2:{title:"✂️ Tikuv 2",lastLabel:'Коп сони'},
+};
+
+let CU=null,curB='',isTmo=false,prevPage='dashboard';
+let bolimData=[],bolimFiltered=[],bolimPage=0;
+let tmoData=[],tmoFiltered=[],tmoPage=0;
+let zakazData=[],zakazFiltered=[],zakazPageN=0;
+let ordersList=[];
+const PER=15;
+
+// ===== LOGIN =====
+function toggleParol(){
+  const i=document.getElementById('login-p');
+  const ic=document.getElementById('parol-icon');
+  if(i.type==='password'){i.type='text';ic.className='ti ti-eye-off';}
+  else{i.type='password';ic.className='ti ti-eye';}
+}
+
+function doLogin(){
+  const u=document.getElementById('login-u').value.trim();
+  const p=document.getElementById('login-p').value;
+  const user=USERS.find(x=>x.login===u&&x.parol===p);
+  if(!user){document.getElementById('login-err').classList.add('show');return;}
+  document.getElementById('login-err').classList.remove('show');
+  CU=user;afterLogin();
+}
+
+function afterLogin(){
+  if(CU.rol==='marketolog'){
+    document.getElementById('topbar-right').innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;background:rgba(29,158,117,0.12);color:#1D9E75">Marketolog</span>
+        <span style="font-size:12px;color:var(--text2)">${CU.ism}</span>
+        <button class="logout-btn" onclick="doLogout()">Chiqish</button>
+      </div>`;
+    document.getElementById('mob-nav').style.display='none';
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-zakaz-qoshish').classList.add('active');
+    loadOrders();
+    loadZakazList();
+    return;
+  }
+  const rc=CU.rol==='admin'?'rol-admin':CU.rol==='rahbariyat'?'rol-rahbariyat':'rol-xodim';
+  const rn=CU.rol==='admin'?'Admin':CU.rol==='rahbariyat'?'Rahbariyat':'Xodim';
+  document.getElementById('topbar-right').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px">
+      <nav class="nav" id="main-nav" style="display:flex;gap:4px">
+        <button onclick="showPage('dashboard',this)"><i class="ti ti-chart-bar"></i><span class="nav-label">Kunlik hisobot</span></button>
+        <button onclick="showPage('sxema',this)"><i class="ti ti-sitemap"></i><span class="nav-label">Sxema</span></button>
+      </nav>
+      <span class="rol-badge ${rc}">${rn}</span>
+      <span style="font-size:12px;color:var(--text2)">${CU.ism}</span>
+      <button class="logout-btn" onclick="doLogout()">Chiqish</button>
+    </div>`;
+  document.getElementById('mob-nav').style.display='flex';
+  const y=new Date();y.setDate(y.getDate()-1);
+  const M=['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'];
+  document.getElementById('kecha-sana').textContent=y.getDate()+' '+M[y.getMonth()]+' '+y.getFullYear()+' y. hisoboti';
+  if(CU.rol==='xodim'){
+    if(CU.bolim==='tmo')openBolim('tmo');
+    else openBolim(CU.bolim);
+  } else {
+    setTimeout(()=>{
+      const nav=document.getElementById('main-nav');
+      if(nav)nav.querySelectorAll('button')[0].classList.add('active');
+    },50);
+    showPage('dashboard',null);
+    loadDashboard();
+  }
+}
+
+function doLogout(){
+  CU=null;
+  document.getElementById('topbar-right').innerHTML='';
+  document.getElementById('mob-nav').style.display='none';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-login').classList.add('active');
+  document.getElementById('login-u').value='';
+  document.getElementById('login-p').value='';
+}
+
+function canEdit(bid){
+  if(!CU||CU.rol==='marketolog')return false;
+  if(!CU)return false;
+  if(CU.rol==='admin')return true;
+  if(CU.rol==='rahbariyat')return false;
+  return CU.bolim===bid;
+}
+
+// ===== SUPABASE FUNKSIYALAR =====
+async function loadOrders(){
+  const {data}=await sb.from('orders').select('name').order('name');
+  ordersList=data||[];
+  const sel=document.getElementById('m-zakaz');
+  sel.innerHTML='<option value="">— tanlang —</option>';
+  ordersList.forEach(o=>{
+    const op=document.createElement('option');
+    op.value=o.name;op.textContent=o.name;
+    sel.appendChild(op);
+  });
+}
+
+async function loadDashboard(){
+  const bolimlar=['toquv','xomombor','partiya','boyash','yarimtayyor','tikuv1','tikuv2','tmo'];
+  let total=0,totalSht=0;
+  for(const b of bolimlar){
+    const {data,count}=await sb.from('bolim_records').select('sht',{count:'exact'}).eq('bolim',b);
+    const sht=data?data.reduce((a,r)=>a+r.sht,0):0;
+    totalSht+=sht;
+    total+=count||0;
+    const el=document.getElementById('dc-'+b);
+    const bar=document.getElementById('db-'+b);
+    if(el){el.textContent=(count||0)+' yozuv';}
+    if(bar){bar.style.width=Math.min((count||0)*10,100)+'%';}
+  }
+  document.getElementById('dash-sht').textContent=totalSht.toLocaleString();
+  document.getElementById('dash-total').textContent=total.toLocaleString();
+  const {count:oc}=await sb.from('orders').select('*',{count:'exact',head:true});
+  document.getElementById('dash-orders').textContent=oc||0;
+}
+
+async function loadBolim(bolim){
+  const q=document.getElementById('bolim-search').value.toLowerCase();
+  let query=sb.from('bolim_records').select('*').eq('bolim',bolim).order('created_at',{ascending:false});
+  const {data}=await query;
+  bolimData=data||[];
+  bolimFiltered=q?bolimData.filter(r=>r.zakaz.toLowerCase().includes(q)):bolimData;
+  bolimPage=0;
+  renderBolim();
+}
+
+async function loadTmo(){
+  const q=document.getElementById('tmo-search').value.toLowerCase();
+  let query=sb.from('bolim_records').select('*').eq('bolim','tmo').order('created_at',{ascending:false});
+  const {data}=await query;
+  tmoData=data||[];
+  tmoFiltered=q?tmoData.filter(r=>r.zakaz.toLowerCase().includes(q)):tmoData;
+  tmoPage=0;
+  renderTmo();
+}
+
+async function loadZakaz(){
+  const {data:orders}=await sb.from('orders').select('*').order('tushgan_sana',{ascending:false});
+  const {data:records}=await sb.from('bolim_records').select('*');
+  if(!orders||!records){return;}
+  const bolimlar=['toquv','xomombor','partiya','boyash','yarimtayyor','tikuv1','tikuv2','tmo'];
+  zakazData=orders.map(o=>{
+    const row={nom:o.name,kilosi:o.kilosi,shtugi:o.shtugi,masul:o.masul,tushgan_sana:o.tushgan_sana,srok:o.srok};
+    bolimlar.forEach(b=>{
+      const recs=records.filter(r=>r.bolim===b&&r.zakaz===o.name);
+      row[b]=recs.reduce((a,r)=>a+r.sht,0);
+    });
+    return row;
+  });
+  const q=document.getElementById('zakaz-search').value.toLowerCase();
+  zakazFiltered=q?zakazData.filter(r=>r.nom.toLowerCase().includes(q)):zakazData;
+  zakazPageN=0;
+  renderZakaz();
+}
+
+// ===== RENDER =====
+function v(n){return n>0?'<b>'+n.toLocaleString()+'</b>':'<span style="color:var(--text3)">—</span>';}
+
+function renderBolim(){
+  const s=bolimPage*PER,sl=bolimFiltered.slice(s,s+PER);
+  const lbl=BOLIM_INFO[curB]?.lastLabel||'Рулон сони';
+  document.getElementById('bolim-tbody').innerHTML=sl.map((r,i)=>`<tr>
+    <td style="text-align:left">${s+i+1}</td>
+    <td style="text-align:left"><b>${r.zakaz}</b></td>
+    <td>${r.br_kg>0?'<span style="color:#D85A30;font-weight:500">'+r.br_kg+'</span>':'—'}</td>
+    <td>${r.nt_kg}</td>
+    <td><b>${r.sht.toLocaleString()}</b></td>
+    <td>${r.chislo||'—'}</td>
+    <td>${r.last_count||'—'}</td>
+    <td>${canEdit(curB)?`<button class="btn-list" onclick="deleteRecord(${r.id},'bolim')" style="color:#D85A30"><i class="ti ti-trash"></i></button>`:''}</td>
+  </tr>`).join('');
+  document.getElementById('b-br').textContent=bolimFiltered.reduce((a,r)=>a+(r.br_kg||0),0).toFixed(1);
+  document.getElementById('b-nt').textContent=bolimFiltered.reduce((a,r)=>a+(r.nt_kg||0),0).toFixed(1);
+  document.getElementById('b-sht').textContent=bolimFiltered.reduce((a,r)=>a+r.sht,0).toLocaleString();
+  document.getElementById('b-last').textContent=bolimFiltered.reduce((a,r)=>a+(r.last_count||0),0).toLocaleString();
+  document.getElementById('bolim-info').textContent=`${Math.min(s+1,bolimFiltered.length)}–${Math.min(s+PER,bolimFiltered.length)} / ${bolimFiltered.length} ta`;
+  document.getElementById('b-prev').disabled=bolimPage===0;
+  document.getElementById('b-next').disabled=s+PER>=bolimFiltered.length;
+}
+
+function renderTmo(){
+  const s=tmoPage*PER,sl=tmoFiltered.slice(s,s+PER);
+  document.getElementById('tmo-tbody').innerHTML=sl.map((r,i)=>`<tr>
+    <td style="text-align:left">${s+i+1}</td>
+    <td style="text-align:left"><b>${r.zakaz}</b></td>
+    <td>${r.br_kg>0?'<span style="color:#D85A30;font-weight:500">'+r.br_kg+'</span>':'—'}</td>
+    <td>${r.nt_kg}</td>
+    <td><b>${r.sht.toLocaleString()}</b></td>
+    <td>${r.chislo||'—'}</td>
+    <td>${r.last_count||'—'}</td>
+    <td>${canEdit('tmo')?`<button class="btn-list" onclick="deleteRecord(${r.id},'tmo')" style="color:#D85A30"><i class="ti ti-trash"></i></button>`:''}</td>
+  </tr>`).join('');
+  document.getElementById('ts-br').textContent=tmoFiltered.reduce((a,r)=>a+(r.br_kg||0),0).toFixed(1);
+  document.getElementById('ts-nt').textContent=tmoFiltered.reduce((a,r)=>a+(r.nt_kg||0),0).toFixed(1);
+  document.getElementById('ts-sht').textContent=tmoFiltered.reduce((a,r)=>a+r.sht,0).toLocaleString();
+  document.getElementById('ts-kop').textContent=tmoFiltered.reduce((a,r)=>a+(r.last_count||0),0).toLocaleString();
+  document.getElementById('tmo-info').textContent=`${Math.min(s+1,tmoFiltered.length)}–${Math.min(s+PER,tmoFiltered.length)} / ${tmoFiltered.length} ta`;
+  document.getElementById('t-prev').disabled=tmoPage===0;
+  document.getElementById('t-next').disabled=s+PER>=tmoFiltered.length;
+}
+
+function renderZakaz(){
+  const s=zakazPageN*PER,sl=zakazFiltered.slice(s,s+PER);
+  const wrap=document.getElementById('zakaz-loading');
+  wrap.innerHTML=`<table>
+    <thead><tr>
+      <th style="width:30px">№</th>
+      <th style="min-width:120px;text-align:left">Заказ номи</th>
+      <th style="width:70px">Килоси</th>
+      <th style="width:65px">Штуги</th>
+      <th style="width:100px">Масъул</th>
+      <th style="width:90px">Тушган сана</th>
+      <th style="width:80px">Срок</th>
+      <th style="background:rgba(24,95,165,0.1);color:#185FA5;width:55px">Тукув</th>
+      <th style="background:rgba(13,80,65,0.1);color:#1D9E75;width:55px">Хом О.</th>
+      <th style="background:rgba(186,117,23,0.1);color:#BA7517;width:55px">Партия</th>
+      <th style="background:rgba(216,90,48,0.1);color:#D85A30;width:55px">Буёк</th>
+      <th style="background:rgba(59,109,17,0.1);color:#3B6D11;width:55px">Ярим</th>
+      <th style="background:rgba(153,53,86,0.1);color:#993556;width:50px">Ч-1</th>
+      <th style="background:rgba(153,53,86,0.1);color:#993556;width:50px">Ч-2</th>
+      <th style="background:rgba(13,80,65,0.15);color:#0F6E56;width:50px">ТМО</th>
+    </tr></thead>
+    <tbody>${sl.map((r,i)=>{
+      const srokExpired=r.srok&&new Date(r.srok)<new Date();
+      return `<tr>
+        <td>${s+i+1}</td>
+        <td style="text-align:left"><b>${r.nom}</b></td>
+        <td>${r.kilosi||'—'}</td>
+        <td>${r.shtugi||'—'}</td>
+        <td>${r.masul||'—'}</td>
+        <td>${r.tushgan_sana||'—'}</td>
+        <td style="color:${srokExpired?'#D85A30':'inherit'};font-weight:${srokExpired?'500':'400'}">${r.srok||'—'}</td>
+        <td>${v(r.toquv)}</td><td>${v(r.xomombor)}</td><td>${v(r.partiya)}</td>
+        <td>${v(r.boyash)}</td><td>${v(r.yarimtayyor)}</td>
+        <td>${v(r.tikuv1)}</td><td>${v(r.tikuv2)}</td><td>${v(r.tmo)}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+  document.getElementById('zakaz-info').textContent=`${Math.min(s+1,zakazFiltered.length)}–${Math.min(s+PER,zakazFiltered.length)} / ${zakazFiltered.length} ta`;
+  document.getElementById('z-prev').disabled=zakazPageN===0;
+  document.getElementById('z-next').disabled=s+PER>=zakazFiltered.length;
+}
+
+// ===== SAHIFALAR =====
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('#main-nav button,.mob-nav button').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  prevPage=id;
+  if(id==='dashboard')loadDashboard();
+}
+
+function openBolim(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  isTmo=false;
+  if(id==='tmo'){
+    isTmo=true;
+    document.getElementById('page-tmo').classList.add('active');
+    document.getElementById('add-btn-tmo').style.display=canEdit('tmo')?'flex':'none';
+    loadTmo();
+  } else if(id==='zakaz'){
+    document.getElementById('page-zakaz').classList.add('active');
+    loadZakaz();
+  } else {
+    curB=id;
+    const c=BOLIM_INFO[id];
+    document.getElementById('page-bolim').classList.add('active');
+    document.getElementById('bolim-title').textContent=c.title;
+    document.getElementById('bolim-search').value='';
+    document.getElementById('last-col-header').textContent=c.lastLabel;
+    document.getElementById('b-last-label').textContent='Jami '+c.lastLabel;
+    document.getElementById('add-btn-bolim').style.display=canEdit(id)?'flex':'none';
+    loadBolim(id);
+  }
+}
+
+function closeBolim(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  if(CU&&CU.rol==='xodim'){
+    if(CU.bolim==='tmo')openBolim('tmo');
+    else openBolim(CU.bolim);
+  } else {
+    document.getElementById('page-'+prevPage).classList.add('active');
+    if(prevPage==='dashboard')loadDashboard();
+  }
+}
+
+function bolimFilter(){
+  const q=document.getElementById('bolim-search').value.toLowerCase();
+  bolimFiltered=q?bolimData.filter(r=>r.zakaz.toLowerCase().includes(q)):bolimData;
+  bolimPage=0;renderBolim();
+}
+function bolimChangePage(d){bolimPage+=d;renderBolim();}
+
+function tmoFilter(){
+  const q=document.getElementById('tmo-search').value.toLowerCase();
+  tmoFiltered=q?tmoData.filter(r=>r.zakaz.toLowerCase().includes(q)):tmoData;
+  tmoPage=0;renderTmo();
+}
+function tmoChangePage(d){tmoPage+=d;renderTmo();}
+
+function zakazFilter(){
+  const q=document.getElementById('zakaz-search').value.toLowerCase();
+  zakazFiltered=q?zakazData.filter(r=>r.nom.toLowerCase().includes(q)):zakazData;
+  zakazPageN=0;renderZakaz();
+}
+function zakazPage(d){zakazPageN+=d;renderZakaz();}
+
+// ===== MODAL =====
+function openModal(){
+  const lbl=isTmo?'Коп сони':(curB==='tikuv1'||curB==='tikuv2')?'Коп сони':'Рулон сони';
+  const bid=isTmo?'tmo':curB;
+  document.getElementById('modal-title').textContent=isTmo?'📦 TMO — yangi qator':(BOLIM_INFO[curB]?BOLIM_INFO[curB].title+' — yangi qator':'');
+  document.getElementById('m-last-label').textContent=lbl+' *';
+  ['m-zakaz','m-br','m-nt','m-sht','m-chislo','m-last'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('ok-msg').classList.remove('show');
+  document.getElementById('err-msg').classList.remove('show');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function closeModalOutside(e){if(e.target.id==='modal-overlay')closeModal();}
+
+async function saveRecord(){
+  const zakaz=document.getElementById('m-zakaz').value;
+  const nt=parseFloat(document.getElementById('m-nt').value)||0;
+  const sht=parseInt(document.getElementById('m-sht').value)||0;
+  if(!zakaz){showErr('Заказni tanlang!');return;}
+  if(!sht){showErr('Шт majburiy!');return;}
+  const br=parseFloat(document.getElementById('m-br').value)||0;
+  const chislo=parseInt(document.getElementById('m-chislo').value)||0;
+  const last=parseInt(document.getElementById('m-last').value)||0;
+  const bolim=isTmo?'tmo':curB;
+  document.getElementById('save-btn').disabled=true;
+  document.getElementById('save-btn').textContent='Saqlanmoqda...';
+  const {error}=await sb.from('bolim_records').insert({
+    bolim,zakaz,br_kg:br,nt_kg:nt,sht,chislo,last_count:last,sana:new Date().toISOString().split('T')[0]
+  });
+  document.getElementById('save-btn').disabled=false;
+  document.getElementById('save-btn').textContent='Saqlash';
+  if(error){showErr('Xato: '+error.message);return;}
+  document.getElementById('ok-msg').classList.add('show');
+  setTimeout(()=>{
+    document.getElementById('ok-msg').classList.remove('show');
+    closeModal();
+    if(isTmo)loadTmo();else loadBolim(curB);
+  },1000);
+}
+
+async function deleteRecord(id,type){
+  if(!confirm('O\'chirishni tasdiqlaysizmi?'))return;
+  await sb.from('bolim_records').delete().eq('id',id);
+  if(type==='tmo')loadTmo();else loadBolim(curB);
+}
+
+function showErr(msg){
+  const el=document.getElementById('err-msg');
+  el.textContent='❌ '+msg;
+  el.classList.add('show');
+}
+</script>
+</body>
+</html>
