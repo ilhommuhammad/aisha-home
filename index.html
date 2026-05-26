@@ -321,9 +321,35 @@ tr:hover td{background:var(--bg2)}
         <span style="font-size:15px;font-weight:500">📋 Yangi Заказ qo'shish</span>
       </div>
       <div style="background:var(--bg1);border:0.5px solid var(--border);border-radius:var(--r2);padding:20px;max-width:500px;margin-top:8px">
-        <div class="field" style="margin-bottom:14px">
-          <label style="display:block;font-size:13px;color:var(--text2);margin-bottom:6px">Заказ nomi *</label>
-          <input type="text" id="new-zakaz-name" placeholder="Masalan: 512 Yangi buyurtma" style="width:100%;font-size:14px" onkeydown="if(event.key==='Enter')saveNewZakaz()">
+        <div class="field-row" style="margin-bottom:12px">
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Заказ nomi *</label>
+            <input type="text" id="new-zakaz-name" placeholder="Masalan: 512 Катар" style="width:100%;font-size:13px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Масъул</label>
+            <input type="text" id="new-zakaz-masul" placeholder="Ism familiya" style="width:100%;font-size:13px">
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:12px">
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Килоси (kg)</label>
+            <input type="number" id="new-zakaz-kilo" placeholder="0" min="0" step="0.1" style="width:100%;font-size:13px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Штуги (dona)</label>
+            <input type="number" id="new-zakaz-sht" placeholder="0" min="0" style="width:100%;font-size:13px">
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:12px">
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Тушган сана</label>
+            <input type="date" id="new-zakaz-sana" style="width:100%;font-size:13px">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:5px">Срок (tugash sanasi)</label>
+            <input type="date" id="new-zakaz-srok" style="width:100%;font-size:13px">
+          </div>
         </div>
         <div id="zakaz-add-ok" class="ok-msg" style="margin-bottom:12px"></div>
         <div id="zakaz-add-err" class="err-msg" style="margin-bottom:12px"></div>
@@ -371,21 +397,40 @@ tr:hover td{background:var(--bg2)}
 async function loadZakazList(){
   const el=document.getElementById('zakaz-list-market');
   if(!el)return;
-  const {data}=await sb.from('orders').select('name').order('name');
+  const {data}=await sb.from('orders').select('*').order('tushgan_sana',{ascending:false});
   if(!data||data.length===0){
     el.innerHTML='<p style="font-size:12px;color:var(--text3)">Hali zakazlar yo\'q</p>';
     return;
   }
-  el.innerHTML=data.map(o=>`
-    <div style="padding:8px 12px;background:var(--bg2);border-radius:var(--r);margin-bottom:6px;font-size:13px;display:flex;align-items:center;justify-content:space-between">
-      <span>${o.name}</span>
-      <button onclick="deleteZakazM(this,'${o.name.replace(/'/g,"\\'")}')" style="background:none;border:none;cursor:pointer;color:#D85A30;font-size:14px;padding:2px 6px"><i class="ti ti-trash"></i></button>
-    </div>`).join('');
+  el.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr>
+      <th style="text-align:left">Заказ номи</th>
+      <th>Килоси</th>
+      <th>Штуги</th>
+      <th>Масъул</th>
+      <th>Тушган сана</th>
+      <th>Срок</th>
+      <th>Amal</th>
+    </tr></thead>
+    <tbody>${data.map(o=>`<tr>
+      <td style="text-align:left"><b>${o.name}</b></td>
+      <td>${o.kilosi||'—'}</td>
+      <td>${o.shtugi||'—'}</td>
+      <td>${o.masul||'—'}</td>
+      <td>${o.tushgan_sana||'—'}</td>
+      <td style="color:${o.srok&&new Date(o.srok)<new Date()?'#D85A30':'inherit'}">${o.srok||'—'}</td>
+      <td><button onclick="deleteZakazM(this,'${o.name.replace(/'/g,"\\'")}')" style="background:none;border:none;cursor:pointer;color:#D85A30;font-size:14px;padding:2px 6px"><i class="ti ti-trash"></i></button></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
 }
 
 async function saveNewZakaz(){
-  const inp=document.getElementById('new-zakaz-name');
-  const name=inp.value.trim();
+  const name=document.getElementById('new-zakaz-name').value.trim();
+  const masul=document.getElementById('new-zakaz-masul').value.trim();
+  const kilosi=parseFloat(document.getElementById('new-zakaz-kilo').value)||0;
+  const shtugi=parseInt(document.getElementById('new-zakaz-sht').value)||0;
+  const tushgan_sana=document.getElementById('new-zakaz-sana').value||null;
+  const srok=document.getElementById('new-zakaz-srok').value||null;
   const ok=document.getElementById('zakaz-add-ok');
   const err=document.getElementById('zakaz-add-err');
   ok.style.display='none'; err.style.display='none';
@@ -396,7 +441,7 @@ async function saveNewZakaz(){
   }
   const btn=document.querySelector('#page-zakaz-qoshish .add-btn');
   btn.disabled=true; btn.textContent='Saqlanmoqda...';
-  const {error}=await sb.from('orders').insert({name});
+  const {error}=await sb.from('orders').insert({name,masul,kilosi,shtugi,tushgan_sana,srok});
   btn.disabled=false; btn.innerHTML='<i class="ti ti-plus"></i> Zakazni saqlash';
   if(error){
     if(error.code==='23505'){err.textContent='❌ Bu nom allaqachon mavjud!';}
@@ -406,7 +451,9 @@ async function saveNewZakaz(){
   }
   ok.textContent='✅ "'+name+'" muvaffaqiyatli qo\'shildi!';
   ok.style.display='block';
-  inp.value='';
+  ['new-zakaz-name','new-zakaz-masul','new-zakaz-kilo','new-zakaz-sht','new-zakaz-sana','new-zakaz-srok'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
   loadZakazList();
   loadOrders();
   setTimeout(()=>{ok.style.display='none';},3000);
@@ -589,12 +636,12 @@ async function loadTmo(){
 }
 
 async function loadZakaz(){
-  const {data:orders}=await sb.from('orders').select('name').order('name');
+  const {data:orders}=await sb.from('orders').select('*').order('tushgan_sana',{ascending:false});
   const {data:records}=await sb.from('bolim_records').select('*');
   if(!orders||!records){return;}
   const bolimlar=['toquv','xomombor','partiya','boyash','yarimtayyor','tikuv1','tikuv2','tmo'];
   zakazData=orders.map(o=>{
-    const row={nom:o.name};
+    const row={nom:o.name,kilosi:o.kilosi,shtugi:o.shtugi,masul:o.masul,tushgan_sana:o.tushgan_sana,srok:o.srok};
     bolimlar.forEach(b=>{
       const recs=records.filter(r=>r.bolim===b&&r.zakaz===o.name);
       row[b]=recs.reduce((a,r)=>a+r.sht,0);
@@ -658,23 +705,37 @@ function renderZakaz(){
   const wrap=document.getElementById('zakaz-loading');
   wrap.innerHTML=`<table>
     <thead><tr>
-      <th style="width:36px">№</th><th style="min-width:130px;text-align:left">Номи</th>
-      <th style="background:rgba(24,95,165,0.1);color:#185FA5">Тукувда</th>
-      <th style="background:rgba(13,80,65,0.1);color:#1D9E75">Хом Омборда</th>
-      <th style="background:rgba(186,117,23,0.1);color:#BA7517">Партияда</th>
-      <th style="background:rgba(216,90,48,0.1);color:#D85A30">Буёкда</th>
-      <th style="background:rgba(59,109,17,0.1);color:#3B6D11">Ярим ТМО</th>
-      <th style="background:rgba(153,53,86,0.1);color:#993556">Ч-1 да</th>
-      <th style="background:rgba(153,53,86,0.1);color:#993556">Ч-2 да</th>
-      <th style="background:rgba(13,80,65,0.15);color:#0F6E56">ТМО да</th>
+      <th style="width:30px">№</th>
+      <th style="min-width:120px;text-align:left">Заказ номи</th>
+      <th style="width:70px">Килоси</th>
+      <th style="width:65px">Штуги</th>
+      <th style="width:100px">Масъул</th>
+      <th style="width:90px">Тушган сана</th>
+      <th style="width:80px">Срок</th>
+      <th style="background:rgba(24,95,165,0.1);color:#185FA5;width:55px">Тукув</th>
+      <th style="background:rgba(13,80,65,0.1);color:#1D9E75;width:55px">Хом О.</th>
+      <th style="background:rgba(186,117,23,0.1);color:#BA7517;width:55px">Партия</th>
+      <th style="background:rgba(216,90,48,0.1);color:#D85A30;width:55px">Буёк</th>
+      <th style="background:rgba(59,109,17,0.1);color:#3B6D11;width:55px">Ярим</th>
+      <th style="background:rgba(153,53,86,0.1);color:#993556;width:50px">Ч-1</th>
+      <th style="background:rgba(153,53,86,0.1);color:#993556;width:50px">Ч-2</th>
+      <th style="background:rgba(13,80,65,0.15);color:#0F6E56;width:50px">ТМО</th>
     </tr></thead>
-    <tbody>${sl.map((r,i)=>`<tr>
-      <td>${s+i+1}</td>
-      <td style="text-align:left"><b>${r.nom}</b></td>
-      <td>${v(r.toquv)}</td><td>${v(r.xomombor)}</td><td>${v(r.partiya)}</td>
-      <td>${v(r.boyash)}</td><td>${v(r.yarimtayyor)}</td>
-      <td>${v(r.tikuv1)}</td><td>${v(r.tikuv2)}</td><td>${v(r.tmo)}</td>
-    </tr>`).join('')}</tbody>
+    <tbody>${sl.map((r,i)=>{
+      const srokExpired=r.srok&&new Date(r.srok)<new Date();
+      return `<tr>
+        <td>${s+i+1}</td>
+        <td style="text-align:left"><b>${r.nom}</b></td>
+        <td>${r.kilosi||'—'}</td>
+        <td>${r.shtugi||'—'}</td>
+        <td>${r.masul||'—'}</td>
+        <td>${r.tushgan_sana||'—'}</td>
+        <td style="color:${srokExpired?'#D85A30':'inherit'};font-weight:${srokExpired?'500':'400'}">${r.srok||'—'}</td>
+        <td>${v(r.toquv)}</td><td>${v(r.xomombor)}</td><td>${v(r.partiya)}</td>
+        <td>${v(r.boyash)}</td><td>${v(r.yarimtayyor)}</td>
+        <td>${v(r.tikuv1)}</td><td>${v(r.tikuv2)}</td><td>${v(r.tmo)}</td>
+      </tr>`;
+    }).join('')}</tbody>
   </table>`;
   document.getElementById('zakaz-info').textContent=`${Math.min(s+1,zakazFiltered.length)}–${Math.min(s+PER,zakazFiltered.length)} / ${zakazFiltered.length} ta`;
   document.getElementById('z-prev').disabled=zakazPageN===0;
